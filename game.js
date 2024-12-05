@@ -70,14 +70,14 @@ window.onload = function () {
 
     createAliens();
 
-    // Start shooting automatically as soon as the game starts
-    startShooting();
-
     requestAnimationFrame(update);
     board.addEventListener("mousedown", startDrag);
     board.addEventListener("mousemove", dragShip);
     board.addEventListener("mouseup", stopDrag);
     board.addEventListener("mouseleave", stopDrag);
+
+    board.addEventListener("mousedown", startShooting);
+    board.addEventListener("mouseup", stopShooting);
 
     document.getElementById("retry").onclick = restartGame;
 };
@@ -167,8 +167,13 @@ function startShooting() {
     if (!shootingInterval) {
         shootingInterval = setInterval(() => {
             bulletArray.push({ x: ship.x + shipWidth * 15 / 32, y: ship.y, width: tileSize / 8, height: tileSize / 2, used: false });
-        }, 200);  // Shoot every 200ms
+        }, 200);
     }
+}
+
+function stopShooting() {
+    clearInterval(shootingInterval);
+    shootingInterval = null;
 }
 
 function createAliens() {
