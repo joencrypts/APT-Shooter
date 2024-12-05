@@ -25,8 +25,8 @@ let currentRound = 1, totalRounds = 8;
 
 let backgroundMusic;
 
-let targetX = 0;  // Target x position of the ship
-let smoothSpeed = 0.1;  // Control the speed of the movement
+let dragging = false;  // Track if the player is dragging the ship
+let offsetX = 0;       // To store the offset when clicking the ship
 
 window.onload = function () {
     const screenWidth = window.innerWidth;
@@ -70,10 +70,14 @@ window.onload = function () {
 
     createAliens();
 
+    // Start shooting automatically as soon as the game starts
+    startShooting();
+
     requestAnimationFrame(update);
-    board.addEventListener("mousemove", moveShipWithMouse);
-    board.addEventListener("mouseenter", startShooting);
-    board.addEventListener("mouseleave", stopShooting);
+    board.addEventListener("mousedown", startDrag);
+    board.addEventListener("mousemove", dragShip);
+    board.addEventListener("mouseup", stopDrag);
+    board.addEventListener("mouseleave", stopDrag);
 
     document.getElementById("retry").onclick = restartGame;
 };
@@ -82,9 +86,6 @@ function update() {
     if (gameOver) return;
     requestAnimationFrame(update);
     context.clearRect(0, 0, board.width, board.height);
-
-    // Smoothly move the ship toward the target position
-    ship.x += (targetX - ship.x) * smoothSpeed;
 
     context.drawImage(shipImg, ship.x, ship.y, ship.width, ship.height);
 
@@ -141,25 +142,33 @@ function update() {
     context.fillText(`Round: ${currentRound}/${totalRounds}`, boardWidth - 100, 20);
 }
 
-function moveShipWithMouse(e) {
+function startDrag(e) {
     const rect = board.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
+    if (e.clientX >= ship.x && e.clientX <= ship.x + ship.width && e.clientY >= ship.y && e.clientY <= ship.y + ship.height) {
+        dragging = true;
+        offsetX = e.clientX - ship.x;  // Calculate the offset of mouse position relative to ship's position
+    }
+}
 
-    // Set the target position of the ship
-    targetX = Math.max(Math.min(mouseX - ship.width / 2, board.width - ship.width), 0);
+function dragShip(e) {
+    if (dragging) {
+        const rect = board.getBoundingClientRect();
+        let newX = e.clientX - offsetX;
+        newX = Math.max(0, Math.min(newX, board.width - ship.width));  // Ensure the ship stays within bounds
+        ship.x = newX;
+    }
+}
+
+function stopDrag() {
+    dragging = false;
 }
 
 function startShooting() {
     if (!shootingInterval) {
         shootingInterval = setInterval(() => {
             bulletArray.push({ x: ship.x + shipWidth * 15 / 32, y: ship.y, width: tileSize / 8, height: tileSize / 2, used: false });
-        }, 200);
+        }, 200);  // Shoot every 200ms
     }
-}
-
-function stopShooting() {
-    clearInterval(shootingInterval);
-    shootingInterval = null;
 }
 
 function createAliens() {
