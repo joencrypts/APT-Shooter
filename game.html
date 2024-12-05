@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APT Shooter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="board"></canvas>
+    
+    <div id="game-over">
+        <h2>Lessgooo!</h2>
+        <p id="final-score">Your Score: 0</p>
+        <button id="retry">Once More?</button>
+    </div>
+
+    <div id="win-screen">
+        <h1>You Win!</h1>
+        <p id="win-score">Your Score: 0</p>
+        <button id="retry">Once More?</button>
+        <button id="view-leaderboard">View Leaderboard</button>
+        <button id="listen-music">Listen Again</button>
+    </div>
+
+    <audio id="background-music">
+        <source src="background.mp3" type="audio/mp3">
+        Your browser does not support the audio element.
+    </audio>
+
+    <script src="game.js"></script>
+</body>
+</html>
