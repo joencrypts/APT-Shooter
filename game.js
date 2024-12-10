@@ -26,6 +26,9 @@ let currentRound = 1, totalRounds = 8;
 
 let backgroundMusic;
 
+let dragging = false; // For click-and-slide movement
+let offsetX = 0;
+
 window.onload = function () {
     const screenWidth = window.innerWidth;
     tileSize = Math.floor(screenWidth / columns);
@@ -66,7 +69,11 @@ window.onload = function () {
 
     createAliens();
 
-    board.addEventListener("mousemove", hoverShip);
+    board.addEventListener("mousedown", startDrag);
+    board.addEventListener("mousemove", dragShip);
+    board.addEventListener("mouseup", stopDrag);
+    board.addEventListener("mouseleave", stopDrag);
+
     board.addEventListener("mousedown", startGame);
 
     document.getElementById("retry").onclick = restartGame;
@@ -136,24 +143,49 @@ function update() {
     context.fillText(`Round: ${currentRound}/${totalRounds}`, boardWidth - 100, 20);
 }
 
-function startGame(e) {
+function startGame() {
     if (!gameStarted) {
         gameStarted = true;
         startShooting();
     }
 }
 
-function hoverShip(e) {
+function startDrag(e) {
     const rect = board.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const newX = Math.max(0, Math.min(mouseX - ship.width / 2, board.width - ship.width));
-    ship.x = newX;
+    if (
+        e.clientX >= ship.x &&
+        e.clientX <= ship.x + ship.width &&
+        e.clientY >= ship.y &&
+        e.clientY <= ship.y + ship.height
+    ) {
+        dragging = true;
+        offsetX = e.clientX - ship.x; // Calculate offset relative to ship's position
+    }
+}
+
+function dragShip(e) {
+    if (dragging) {
+        const rect = board.getBoundingClientRect();
+        let newX = e.clientX - offsetX;
+        newX = Math.max(0, Math.min(newX, board.width - ship.width)); // Constrain ship within bounds
+        ship.x = newX;
+    }
+}
+
+function stopDrag() {
+    dragging = false;
 }
 
 function startShooting() {
     if (!shootingInterval) {
         shootingInterval = setInterval(() => {
-            bulletArray.push({ x: ship.x + shipWidth / 2 - tileSize / 16, y: ship.y, width: tileSize / 8, height: tileSize / 2, used: false });
+            bulletArray.push({
+                x: ship.x + shipWidth / 2 - tileSize / 16,
+                y: ship.y,
+                width: tileSize / 8,
+                height: tileSize / 2,
+                used: false
+            });
         }, 200);
     }
 }
@@ -166,14 +198,26 @@ function stopShooting() {
 function createAliens() {
     for (let c = 0; c < alienColumns; c++) {
         for (let r = 0; r < alienRows; r++) {
-            alienArray.push({ img: alienImg, x: alienX + c * alienWidth, y: alienY + r * alienHeight, width: alienWidth, height: alienHeight, alive: true });
+            alienArray.push({
+                img: alienImg,
+                x: alienX + c * alienWidth,
+                y: alienY + r * alienHeight,
+                width: alienWidth,
+                height: alienHeight,
+                alive: true
+            });
         }
     }
     alienCount = alienArray.length;
 }
 
 function detectCollision(a, b) {
-    return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+    );
 }
 
 function endGame() {
