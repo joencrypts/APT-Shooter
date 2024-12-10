@@ -7,7 +7,7 @@ let boardWidth;
 let boardHeight;
 let context;
 
-let shipWidth, shipHeight, shipX, shipY, shipVelocityX;
+let shipWidth, shipHeight, shipX, shipY;
 let ship = { x: 0, y: 0, width: 0, height: 0 };
 
 let shipImg;
@@ -21,13 +21,10 @@ let bulletVelocityY;
 
 let score = 0, gameOver = false;
 let shootingInterval;
+let gameStarted = false; // Game starts when ship is clicked
 let currentRound = 1, totalRounds = 8;
 
 let backgroundMusic;
-
-let dragging = false;  // Track if the player is dragging the ship
-let offsetX = 0;       // To store the offset when clicking the ship
-let gameStarted = false; // Flag to check if the game has started
 
 window.onload = function () {
     const screenWidth = window.innerWidth;
@@ -48,7 +45,6 @@ window.onload = function () {
     ship.y = shipY;
     ship.width = shipWidth;
     ship.height = shipHeight;
-    shipVelocityX = tileSize;
 
     bulletVelocityY = -tileSize / 2;
 
@@ -64,50 +60,24 @@ window.onload = function () {
 
     backgroundMusic = document.getElementById("background-music");
 
+    setTimeout(() => {
+        backgroundMusic.play();
+    }, 1000);
+
     createAliens();
 
-    requestAnimationFrame(update);
-
-    // Event listeners for starting the game and dragging the ship
-    board.addEventListener("mousedown", startGameOrDrag);
-    board.addEventListener("mousemove", dragShip);
-    board.addEventListener("mouseup", stopDrag);
-    board.addEventListener("mouseleave", stopDrag);
+    board.addEventListener("mousemove", hoverShip);
+    board.addEventListener("mousedown", startGame);
 
     document.getElementById("retry").onclick = restartGame;
+
+    requestAnimationFrame(update);
 };
-
-function startGameOrDrag(e) {
-    const rect = board.getBoundingClientRect();
-    if (!gameStarted) {
-        // Start the game if it hasn't started yet
-        gameStarted = true;
-        shootingInterval = setInterval(() => {
-            bulletArray.push({ x: ship.x + shipWidth * 15 / 32, y: ship.y, width: tileSize / 8, height: tileSize / 2, used: false });
-        }, 200);
-        backgroundMusic.play();
-    } else if (e.clientX >= ship.x && e.clientX <= ship.x + ship.width && e.clientY >= ship.y && e.clientY <= ship.y + ship.height) {
-        // Drag the ship if the game has already started
-        dragging = true;
-        offsetX = e.clientX - ship.x;
-    }
-}
-
-function dragShip(e) {
-    if (dragging) {
-        const rect = board.getBoundingClientRect();
-        let newX = e.clientX - offsetX;
-        newX = Math.max(0, Math.min(newX, board.width - ship.width));  // Ensure the ship stays within bounds
-        ship.x = newX;
-    }
-}
-
-function stopDrag() {
-    dragging = false;
-}
 
 function update() {
     if (gameOver) return;
+    if (!gameStarted) return;
+
     requestAnimationFrame(update);
     context.clearRect(0, 0, board.width, board.height);
 
@@ -166,6 +136,33 @@ function update() {
     context.fillText(`Round: ${currentRound}/${totalRounds}`, boardWidth - 100, 20);
 }
 
+function startGame(e) {
+    if (!gameStarted) {
+        gameStarted = true;
+        startShooting();
+    }
+}
+
+function hoverShip(e) {
+    const rect = board.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const newX = Math.max(0, Math.min(mouseX - ship.width / 2, board.width - ship.width));
+    ship.x = newX;
+}
+
+function startShooting() {
+    if (!shootingInterval) {
+        shootingInterval = setInterval(() => {
+            bulletArray.push({ x: ship.x + shipWidth / 2 - tileSize / 16, y: ship.y, width: tileSize / 8, height: tileSize / 2, used: false });
+        }, 200);
+    }
+}
+
+function stopShooting() {
+    clearInterval(shootingInterval);
+    shootingInterval = null;
+}
+
 function createAliens() {
     for (let c = 0; c < alienColumns; c++) {
         for (let r = 0; r < alienRows; r++) {
@@ -181,7 +178,6 @@ function detectCollision(a, b) {
 
 function endGame() {
     gameOver = true;
-    clearInterval(shootingInterval);
     document.getElementById("game-over").style.display = "block";
     document.getElementById("final-score").textContent = `Your Score: ${score}`;
     board.style.display = "none";
@@ -192,7 +188,6 @@ function restartGame() {
     score = 0;
     gameOver = false;
     gameStarted = false;
-    clearInterval(shootingInterval);
     document.getElementById("game-over").style.display = "none";
     board.style.display = "block";
     alienArray = [];
