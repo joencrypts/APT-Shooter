@@ -1,7 +1,6 @@
 let tileSize;
 let rows = 16;
 let columns = 9;
-
 let board;
 let boardWidth;
 let boardHeight;
